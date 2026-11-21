@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>경제시사 데일리</title>
+<meta name="description" content="매일 아침 정리하는 경제 시사 브리핑: 금리, 환율, 증시, 부동산, 무역, 글로벌 경제">
+<meta name="theme-color" content="#0b5d4b">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;800&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: newspaper masthead → lead → market strip → stories with explanatory figures (left) + glossary/calendar/search (right).
+   Korean market colors: red = up, blue = down. */
+:root {
+  --paper: #f5f6f8;
+  --surface: #ffffff;
+  --ink: #14181f;
+  --muted: #5a6370;
+  --rule: #d8dce2;
+  --accent: #0b5d4b;
+  --accent-soft: #e3f0ec;
+  --up: #c8342a;
+  --down: #1f57c0;
+  --bar-muted: #aab2bd;
+  --font-display: "Noto Serif KR", "Nanum Myeongjo", "Apple SD Gothic Neo", serif;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1216; --surface: #171b21; --ink: #e7eaee; --muted: #9aa3ae;
+    --rule: #2a3038; --accent: #56bfa2; --accent-soft: #15302a;
+    --up: #ff6e62; --down: #6f9dff; --bar-muted: #4a525d; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1216; --surface: #171b21; --ink: #e7eaee; --muted: #9aa3ae;
+  --rule: #2a3038; --accent: #56bfa2; --accent-soft: #15302a;
+  --up: #ff6e62; --down: #6f9dff; --bar-muted: #4a525d; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--paper); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--accent); }
+a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+.wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px 56px; }
+
+/* Masthead */
+.mast { display: grid; gap: 10px; padding: 28px 0 14px; border-bottom: 3px double var(--ink); }
+.mast-top { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between;
+  font-size: 13px; color: var(--muted); }
+.mast h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(30px, 6vw, 48px);
+  letter-spacing: -0.02em; line-height: 1.15; margin: 0; }
+.mast h1 span { color: var(--accent); }
+.nav { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.nav button, .nav select {
+  font: inherit; font-size: 14px; color: var(--ink); background: var(--surface);
+  border: 1px solid var(--rule); border-radius: 6px; padding: 6px 12px; cursor: pointer;
+}
+.nav button:disabled { opacity: .4; cursor: default; }
+.nav label { font-size: 13px; color: var(--muted); }
+
+/* Lead */
+.lead { padding: 26px 0 22px; border-bottom: 1px solid var(--rule); display: grid; gap: 10px; }
+.edition-date { font-size: 13px; font-weight: 600; color: var(--accent); letter-spacing: .02em; }
+.lead h2 { font-family: var(--font-display); font-weight: 800; font-size: clamp(24px, 4vw, 34px);
+  line-height: 1.3; margin: 0; text-wrap: balance; max-width: 30em; }
+.lead p { margin: 0; max-width: 46em; font-size: 17px; }
+
+/* Market strip */
+.markets { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1px;
+  background: var(--rule); border: 1px solid var(--rule); margin: 22px 0 6px; border-radius: 8px; overflow: hidden; }
+.mk { background: var(--surface); padding: 12px 14px; display: grid; gap: 2px; }
+.mk-label { font-size: 12px; color: var(--muted); }
+.mk-value { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.mk-chg { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.mk-chg.up { color: var(--up); } .mk-chg.down { color: var(--down); } .mk-chg.flat { color: var(--muted); }
+.mk-note { font-size: 11px; color: var(--muted); }
+.basis { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+
+/* Body grid */
+.grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 36px; margin-top: 18px; }
+@media (max-width: 860px) { .grid { grid-template-columns: 1fr; gap: 28px; } }
+
+.filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.chip { font: inherit; font-size: 13px; padding: 4px 12px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--rule); background: var(--surface); color: var(--ink); }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+.story { padding: 24px 0; border-bottom: 1px solid var(--rule); display: grid; gap: 10px; }
+.story:last-child { border-bottom: 0; }
+.cat { font-size: 12px; font-weight: 600; color: var(--accent); }
+.story h3 { font-family: var(--font-display); font-weight: 600; font-size: 21px; line-height: 1.4;
+  margin: 0; text-wrap: balance; }
+.story p { margin: 0; max-width: 42em; }
+.box { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 8px 12px;
+  border-radius: 0 6px 6px 0; font-size: 15px; max-width: 42em; }
+.box b { font-weight: 600; margin-right: 6px; }
+.box.alt { background: transparent; border: 1px dashed var(--rule); border-left: 3px solid var(--ink); }
+.src { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 12px; }
+
+/* Figures */
+.fig { margin: 4px 0 2px; padding: 14px 16px 12px; background: var(--surface); border: 1px solid var(--rule);
+  border-radius: 8px; max-width: 42em; }
+.fig figcaption { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.fig svg { display: block; width: 100%; height: auto; }
+.fig svg text { font-family: var(--font-body); fill: var(--ink); }
+.fig svg .t-muted { fill: var(--muted); }
+.fig svg .t-num { font-variant-numeric: tabular-nums; font-weight: 600; }
+.fig svg .grid-line { stroke: var(--rule); stroke-width: 1; }
+.fig svg .axis { stroke: var(--muted); stroke-width: 1; }
+.fill-up { fill: var(--up); } .fill-down { fill: var(--down); }
+.fill-accent { fill: var(--accent); } .fill-muted { fill: var(--bar-muted); }
+.stroke-accent { stroke: var(--accent); }
+.fig-note { font-size: 13px; color: var(--muted); margin: 8px 0 0; max-width: none; }
+.flow { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; align-items: stretch; gap: 6px; }
+.flow li { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+.flow .step { background: var(--accent-soft); border: 1px solid var(--rule); border-radius: 6px; padding: 6px 10px; }
+.flow li:last-child .step { background: var(--ink); color: var(--paper); border-color: var(--ink); font-weight: 600; }
+.flow .arr { color: var(--muted); }
+
+aside { display: grid; gap: 28px; align-content: start; }
+.panel h4 { font-family: var(--font-display); font-size: 17px; font-weight: 600; margin: 0 0 8px;
+  padding-bottom: 6px; border-bottom: 2px solid var(--ink); }
+.panel dl { margin: 0; display: grid; gap: 12px; }
+.panel dt { font-weight: 600; font-size: 15px; }
+.panel dd { margin: 2px 0 0; font-size: 14px; color: var(--muted); line-height: 1.6; }
+.cal { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.cal li { display: grid; grid-template-columns: 88px 1fr; gap: 8px; font-size: 14px; }
+.cal .when { font-weight: 600; font-variant-numeric: tabular-nums; }
+.search input { width: 100%; font: inherit; font-size: 14px; padding: 8px 10px; border-radius: 6px;
+  border: 1px solid var(--rule); background: var(--surface); color: var(--ink); }
+.hits { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; font-size: 14px; }
+.hits button { all: unset; cursor: pointer; color: var(--ink); display: block; }
+.hits button:hover .h-title { text-decoration: underline; }
+.hits button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.h-date { font-size: 12px; color: var(--muted); display: block; }
+
+.state { padding: 48px 0; color: var(--muted); max-width: 36em; }
+.state strong { color: var(--ink); display: block; font-size: 18px; margin-bottom: 6px; }
+footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--rule); font-size: 13px; color: var(--muted); }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="mast">
+    <div class="mast-top">
+      <span>금리 · 환율 · 증시 · 부동산 · 무역 · 글로벌</span>
+      <nav class="nav" aria-label="호 이동">
+        <button id="prev" type="button" disabled>← 이전 호</button>
+        <label for="pick">지난 호</label>
+        <select id="pick" disabled><option>불러오는 중</option></select>
+        <button id="next" type="button" disabled>다음 호 →</button>
+      </nav>
+    </div>
+    <h1>경제시사 <span>데일리</span></h1>
+  </header>
+
+  <main id="main">
+    <div class="state"><strong>오늘의 브리핑을 불러오는 중입니다.</strong>잠시만 기다려 주세요.</div>
+  </main>
+
+  <footer>
+    매일 아침 새 호가 발행됩니다. 경제 시사만 다루며, 각 기사 아래에 원문 출처를 달았습니다. 그림은 기사 수치로 직접 그린 설명용 도표입니다. 수치는 발행 시점 보도 기준이니 중요한 판단 전에는 원문을 확인하세요.
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var CATS = ["전체", "통화정책", "금융시장", "외환", "무역·산업", "부동산", "글로벌", "정책·규제"];
+  var editions = [];
+  var current = null;
+  var activeCat = "전체";
+  var query = "";
+  var mainEl = document.getElementById("main");
+  var pick = document.getElementById("pick");
+  var prevBtn = document.getElementById("prev");
+  var nextBtn = document.getElementById("next");
+  var SVGNS = "http://www.w3.org/2000/svg";
+
+  /* ---------- helpers ---------- */
+  function el(tag, attrs, children) {
+    var n = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      if (k === "class") n.className = attrs[k];
+      else if (k === "text") n.textContent = attrs[k];
+      else n.setAttribute(k, attrs[k]);
+    });
+    (children || []).forEach(function (c) { if (c) n.appendChild(c); });
+    return n;
+  }
+  function sv(tag, attrs, text) {
+    var n = document.createElementNS(SVGNS, tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) { n.setAttribute(k, attrs[k]); });
+    if (text != null) n.textContent = text;
+    return n;
+  }
+  function str(v) { return typeof v === "string" ? v : (v == null ? "" : String(v)); }
+  function arr(v) { return Array.isArray(v) ? v : []; }
+  function num(v) { var n = Number(v); return isFinite(n) ? n : null; }
+  function safeUrl(u) { u = str(u); return /^https?:\/\//i.test(u) ? u : null; }
+  function fmtNum(v) {
+    var a = Math.abs(v);
+    var s = a >= 100 ? a.toLocaleString("ko-KR", { maximumFractionDigits: 1 }) : String(Math.round(a * 100) / 100);
+    return (v < 0 ? "−" : "") + s;
+  }
+  // Charts use a narrower drawing on phones so their text stays readable when scaled to the screen.
+  function narrow() { return window.innerWidth < 560; }
+  var TONES = { up: "fill-up", down: "fill-down", accent: "fill-accent", muted: "fill-muted" };
+
+  var WD = ["일", "월", "화", "수", "목", "금", "토"];
+  function fmtDate(d) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d || "");
+    if (!m) return str(d);
+    var dt = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+    return m[1] + "년 " + (+m[2]) + "월 " + (+m[3]) + "일 (" + WD[dt.getUTCDay()] + ")";
+  }
+
+  /* ---------- figures ---------- */
+  function figBars(f) {
+    var items = arr(f.items).filter(function (i) { return num(i.value) !== null; });
+    if (!items.length) return null;
+    var nw = narrow();
+    var W = nw ? 380 : 640, rowH = 34, labelW = nw ? 84 : 118, valW = nw ? 100 : 110, top = 6;
+    var H = top + items.length * rowH + 6;
+    var vals = items.map(function (i) { return num(i.value); });
+    var maxPos = Math.max(0, Math.max.apply(null, vals));
+    var maxNeg = Math.max(0, -Math.min.apply(null, vals));
+    var signed = maxNeg > 0;
+    var x0 = labelW, x1 = W - valW;
+    var span = (maxPos + maxNeg) || 1;
+    var zeroX = x0 + (x1 - x0) * (maxNeg / span);
+    var scale = (x1 - x0) / span;
+    var svg = sv("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": str(f.title) });
+    items.forEach(function (it, i) {
+      var v = num(it.value), y = top + i * rowH;
+      var w = Math.max(2, Math.abs(v) * scale);
+      var x = v >= 0 ? zeroX : zeroX - w;
+      var tone = TONES[it.tone] || (signed ? (v >= 0 ? TONES.up : TONES.down) : (it.highlight ? TONES.accent : TONES.muted));
+      svg.appendChild(sv("text", { x: labelW - 10, y: y + rowH / 2 + 5, "text-anchor": "end", "font-size": 14 }, str(it.label)));
+      svg.appendChild(sv("rect", { x: x, y: y + 7, width: w, height: rowH - 14, rx: 3, "class": tone }));
+      svg.appendChild(sv("text", { x: W - 4, y: y + rowH / 2 + 5, "text-anchor": "end", "font-size": 14, "class": "t-num" },
+        it.display ? str(it.display) : fmtNum(v) + (f.unit ? " " + str(f.unit) : "")));
+    });
+    if (signed) svg.appendChild(sv("line", { x1: zeroX, x2: zeroX, y1: 2, y2: H - 2, "class": "axis" }));
+    return svg;
+  }
+
+  function figLine(f) {
+    var pts = arr(f.points).filter(function (p) { return num(p.value) !== null; });
+    if (pts.length < 2) return null;
+    // Every point carries its own value label, so the grid is unlabeled and only gives a sense of level.
+    var nw = narrow();
+    var W = nw ? 380 : 640, H = nw ? 200 : 220, L = nw ? 34 : 48, R = nw ? 34 : 48, T = 30, B = 36;
+    var vals = pts.map(function (p) { return num(p.value); });
+    var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
+    var pad = (hi - lo) * 0.2 || Math.abs(hi) * 0.05 || 1;
+    lo -= pad; hi += pad;
+    var X = function (i) { return L + (W - L - R) * (i / (pts.length - 1)); };
+    var Y = function (v) { return T + (H - T - B) * (1 - (v - lo) / (hi - lo)); };
+    var svg = sv("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": str(f.title) });
+    for (var g = 0; g <= 3; g++) {
+      var gy = T + (H - T - B) * g / 3;
+      svg.appendChild(sv("line", { x1: L - 16, x2: W - R + 16, y1: gy, y2: gy, "class": "grid-line" }));
+    }
+    function seg(i) {
+      var a = pts[i], b = pts[i + 1];
+      var d = f.step
+        ? "M" + X(i) + "," + Y(num(a.value)) + " H" + X(i + 1) + " V" + Y(num(b.value))
+        : "M" + X(i) + "," + Y(num(a.value)) + " L" + X(i + 1) + "," + Y(num(b.value));
+      var p = sv("path", { d: d, fill: "none", "stroke-width": 3, "class": "stroke-accent", "stroke-linejoin": "round" });
+      if (b.projected) p.setAttribute("stroke-dasharray", "6 5");
+      svg.appendChild(p);
+    }
+    for (var i = 0; i < pts.length - 1; i++) seg(i);
+    pts.forEach(function (p, i) {
+      var cx = X(i), cy = Y(num(p.value)), last = i === pts.length - 1;
+      svg.appendChild(sv("circle", { cx: cx, cy: cy, r: last ? 6 : 4, "class": p.projected ? "fill-muted" : "fill-accent" }));
+      svg.appendChild(sv("text", { x: cx, y: cy - 12, "text-anchor": "middle", "font-size": 13, "class": "t-num" },
+        p.display ? str(p.display) : fmtNum(num(p.value)) + (f.unit ? str(f.unit) : "")));
+      svg.appendChild(sv("text", { x: cx, y: H - 12, "text-anchor": "middle", "font-size": 13, "class": "t-muted" }, str(p.label)));
+    });
+    return svg;
+  }
+
+  function figRange(f) {
+    var mn = f.min || {}, mx = f.max || {};
+    var a = num(mn.value), b = num(mx.value);
+    if (a === null || b === null || b <= a) return null;
+    // Track from min to max; highlighted marks labelled above the track, others below; min/max labels on the bottom line.
+    var nw = narrow();
+    var W = nw ? 380 : 640, H = 136, L = 16, R = 16, Y0 = 58;
+    var X = function (v) { return L + (W - L - R) * ((v - a) / (b - a)); };
+    var svg = sv("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": str(f.title) });
+    svg.appendChild(sv("rect", { x: L, y: Y0 - 5, width: W - L - R, height: 10, rx: 5, "class": "fill-muted" }));
+    [[mn, a, "start"], [mx, b, "end"]].forEach(function (e) {
+      svg.appendChild(sv("text", { x: X(e[1]), y: H - 8, "text-anchor": e[2], "font-size": 13, "class": "t-muted" },
+        str(e[0].label) + " " + fmtNum(e[1]) + (f.unit ? str(f.unit) : "")));
+    });
+    arr(f.marks).forEach(function (m) {
+      var v = num(m.value); if (v === null) return;
+      var x = X(Math.min(b, Math.max(a, v)));
+      var hi = !!m.highlight;
+      var anchor = x < W * 0.25 ? "start" : (x > W * 0.75 ? "end" : "middle");
+      var tx = anchor === "start" ? x - 6 : anchor === "end" ? x + 6 : x;
+      svg.appendChild(sv("line", { x1: x, x2: x, y1: hi ? Y0 - 20 : Y0, y2: hi ? Y0 : Y0 + 20, "class": "axis" }));
+      svg.appendChild(sv("circle", { cx: x, cy: Y0, r: hi ? 8 : 5, "class": hi ? "fill-accent" : "fill-down" }));
+      svg.appendChild(sv("text", { x: tx, y: hi ? Y0 - 26 : Y0 + 36, "text-anchor": anchor, "font-size": 13, "class": "t-num" },
+        str(m.label) + " " + (m.display ? str(m.display) : fmtNum(v) + (f.unit ? str(f.unit) : ""))));
+    });
+    return svg;
+  }
+
+  function figFlow(f) {
+    var steps = arr(f.steps).map(str).filter(Boolean);
+    if (steps.length < 2) return null;
+    var ol = el("ol", { class: "flow" });
+    steps.forEach(function (s, i) {
+      ol.appendChild(el("li", null, [
+        el("span", { class: "step", text: s }),
+        i < steps.length - 1 ? el("span", { class: "arr", "aria-hidden": "true", text: "→" }) : null
+      ]));
+    });
+    return ol;
+  }
+
+  function renderFigure(f) {
+    if (!f || typeof f !== "object") return null;
+    var body = null;
+    try {
+      body = f.type === "bars" ? figBars(f) : f.type === "line" ? figLine(f)
+           : f.type === "range" ? figRange(f) : f.type === "flow" ? figFlow(f) : null;
+    } catch (e) { body = null; }
+    if (!body) return null;
+    var note = [str(f.caption), f.source ? "자료: " + str(f.source) : ""].filter(Boolean).join("  ");
+    return el("figure", { class: "fig" }, [
+      f.title ? el("figcaption", { text: str(f.title) }) : null,
+      body,
+      note ? el("p", { class: "fig-note", text: note }) : null
+    ]);
+  }
+
+  /* ---------- page ---------- */
+  function showState(title, text) {
+    mainEl.innerHTML = "";
+    mainEl.appendChild(el("div", { class: "state" }, [el("strong", { text: title }), document.createTextNode(text)]));
+  }
+
+  function renderNav() {
+    pick.innerHTML = "";
+    editions.forEach(function (e) {
+      var o = el("option", { value: e.date, text: fmtDate(e.date) });
+      if (e.date === current) o.selected = true;
+      pick.appendChild(o);
+    });
+    pick.disabled = editions.length === 0;
+    var i = editions.findIndex(function (e) { return e.date === current; });
+    prevBtn.disabled = i < 0 || i >= editions.length - 1;
+    nextBtn.disabled = i <= 0;
+  }
+
+  function renderMarkets(list) {
+    var box = el("div", { class: "markets", role: "list" });
+    arr(list).forEach(function (m) {
+      var dir = ["up", "down", "flat"].indexOf(m.dir) >= 0 ? m.dir : "flat";
+      var arrow = dir === "up" ? "▲ " : dir === "down" ? "▼ " : "";
+      box.appendChild(el("div", { class: "mk", role: "listitem" }, [
+        el("span", { class: "mk-label", text: str(m.label) }),
+        el("span", { class: "mk-value", text: str(m.value) }),
+        m.change ? el("span", { class: "mk-chg " + dir, text: arrow + str(m.change) }) : null,
+        m.note ? el("span", { class: "mk-note", text: str(m.note) }) : null
+      ]));
+    });
+    return box;
+  }
+
+  function renderStory(s) {
+    var src = el("div", { class: "src" }, [el("span", { text: "출처" })]);
+    arr(s.sources).forEach(function (x) {
+      var u = safeUrl(x && x.url);
+      src.appendChild(u ? el("a", { href: u, target: "_blank", rel: "noopener", text: str(x.name) || "원문" })
+                        : el("span", { text: str(x && x.name) }));
+    });
+    return el("article", { class: "story" }, [
+      el("span", { class: "cat", text: str(s.cat) }),
+      el("h3", { text: str(s.title) }),
+      renderFigure(s.figure),
+      el("p", { text: str(s.body) }),
+      s.why ? el("div", { class: "box" }, [el("b", { text: "왜 중요한가" }), document.createTextNode(str(s.why))]) : null,
+      s.point ? el("div", { class: "box alt" }, [el("b", { text: "논술·면접 연결" }), document.createTextNode(str(s.point))]) : null,
+      arr(s.sources).length ? src : null
+    ]);
+  }
+
+  function renderSearch() {
+    var wrap = el("div", { class: "panel search" });
+    wrap.appendChild(el("h4", { text: "지난 호 검색" }));
+    var input = el("input", { id: "q", type: "search", placeholder: "예: 금통위, 환율, 수출", "aria-label": "지난 호 기사 검색" });
+    input.value = query;
+    var hits = el("ul", { class: "hits", "aria-live": "polite" });
+    function run() {
+      query = input.value.trim();
+      hits.innerHTML = "";
+      if (query.length < 2) return;
+      var q = query.toLowerCase(), n = 0;
+      editions.forEach(function (e) {
+        arr(e.stories).forEach(function (s) {
+          if (n >= 12) return;
+          var hay = (str(s.title) + " " + str(s.body) + " " + str(s.cat)).toLowerCase();
+          if (hay.indexOf(q) >= 0) {
+            n++;
+            var b = el("button", { type: "button" }, [
+              el("span", { class: "h-date", text: fmtDate(e.date) + " · " + str(s.cat) }),
+              el("span", { class: "h-title", text: str(s.title) })
+            ]);
+            b.addEventListener("click", function () { go(e.date); });
+            hits.appendChild(el("li", null, [b]));
+          }
+        });
+      });
+      if (!n) hits.appendChild(el("li", { class: "h-date", text: "일치하는 기사가 없습니다." }));
+    }
+    var t; input.addEventListener("input", function () { clearTimeout(t); t = setTimeout(run, 200); });
+    wrap.appendChild(input); wrap.appendChild(hits);
+    if (query) run();
+    return wrap;
+  }
+
+  function render() {
+    var e = editions.find(function (x) { return x.date === current; });
+    if (!e) { renderNav(); showState("아직 발행된 호가 없습니다.", "첫 브리핑이 올라오면 이곳에 표시됩니다."); return; }
+    mainEl.innerHTML = "";
+    document.title = "경제시사 데일리 · " + fmtDate(e.date);
+
+    mainEl.appendChild(el("section", { class: "lead" }, [
+      el("span", { class: "edition-date", text: fmtDate(e.date) + " 브리핑" }),
+      el("h2", { text: str(e.headline) }),
+      el("p", { text: str(e.lede) })
+    ]));
+    if (arr(e.markets).length) {
+      mainEl.appendChild(renderMarkets(e.markets));
+      if (e.basis) mainEl.appendChild(el("p", { class: "basis", text: str(e.basis) }));
+    }
+
+    var stories = arr(e.stories);
+    var present = CATS.filter(function (c) { return c === "전체" || stories.some(function (s) { return s.cat === c; }); });
+    if (present.indexOf(activeCat) < 0) activeCat = "전체";
+    var filters = el("div", { class: "filters", role: "group", "aria-label": "분야 필터" });
+    present.forEach(function (c) {
+      var b = el("button", { class: "chip", type: "button", "aria-pressed": String(c === activeCat), text: c });
+      b.addEventListener("click", function () { activeCat = c; render(); });
+      filters.appendChild(b);
+    });
+    var col = el("div", null, [filters]);
+    stories.filter(function (s) { return activeCat === "전체" || s.cat === activeCat; })
+      .forEach(function (s) { col.appendChild(renderStory(s)); });
+
+    var side = el("aside");
+    if (arr(e.terms).length) {
+      var dl = el("dl");
+      arr(e.terms).forEach(function (t) {
+        dl.appendChild(el("div", null, [el("dt", { text: str(t.term) }), el("dd", { text: str(t.desc) })]));
+      });
+      side.appendChild(el("div", { class: "panel" }, [el("h4", { text: "오늘의 경제 용어" }), dl]));
+    }
+    if (arr(e.calendar).length) {
+      var ul = el("ul", { class: "cal" });
+      arr(e.calendar).forEach(function (c) {
+        ul.appendChild(el("li", null, [el("span", { class: "when", text: str(c.when) }), el("span", { text: str(c.what) })]));
+      });
+      side.appendChild(el("div", { class: "panel" }, [el("h4", { text: "다가오는 일정" }), ul]));
+    }
+    side.appendChild(renderSearch());
+
+    mainEl.appendChild(el("div", { class: "grid" }, [col, side]));
+    renderNav();
+  }
+
+  function go(date) {
+    if (!editions.some(function (e) { return e.date === date; })) return;
+    current = date; activeCat = "전체";
+    if (location.hash.slice(1) !== date) { try { history.replaceState(null, "", "#" + date); } catch (err) { /* ignore */ } }
+    render(); window.scrollTo(0, 0);
+  }
+  pick.addEventListener("change", function () { go(pick.value); });
+  prevBtn.addEventListener("click", function () {
+    var i = editions.findIndex(function (e) { return e.date === current; });
+    if (i >= 0 && i < editions.length - 1) go(editions[i + 1].date);
+  });
+  nextBtn.addEventListener("click", function () {
+    var i = editions.findIndex(function (e) { return e.date === current; });
+    if (i > 0) go(editions[i - 1].date);
+  });
+  var wasNarrow = narrow(), rt;
+  window.addEventListener("resize", function () {
+    clearTimeout(rt);
+    rt = setTimeout(function () { if (narrow() !== wasNarrow) { wasNarrow = narrow(); if (current) render(); } }, 150);
+  });
+  window.addEventListener("hashchange", function () {
+    var h = location.hash.slice(1);
+    if (h && h !== current) go(h);
+  });
+
+  /* ---------- data: data/editions.json (GitHub Pages and artifact files), plus Claude db when available ---------- */
+  var fromFile = [], fromDb = [];
+  function merge() {
+    var byDate = {};
+    fromFile.concat(fromDb).forEach(function (e) {
+      if (!e || !/^\d{4}-\d{2}-\d{2}$/.test(str(e.date))) return;
+      var prev = byDate[e.date];
+      if (!prev || str(e.updatedAt) > str(prev.updatedAt)) byDate[e.date] = e;
+    });
+    editions = Object.keys(byDate).sort().reverse().map(function (k) { return byDate[k]; });
+    if (!editions.length) return false;
+    var h = location.hash.slice(1);
+    if (!current || !byDate[current]) current = byDate[h] ? h : editions[0].date;
+    render();
+    return true;
+  }
+
+  var done = 0, total = 2;
+  function settle() {
+    done++;
+    if (done >= total && !editions.length) showState("브리핑을 불러오지 못했습니다.", "인터넷 연결을 확인하고 잠시 뒤 다시 열어 주세요.");
+  }
+  var timer = setTimeout(function () {
+    if (!editions.length) showState("브리핑을 아직 불러오지 못했습니다.", "인터넷 연결을 확인하고 잠시 뒤 다시 열어 주세요.");
+  }, 10000);
+
+  fetch("data/editions.json", { cache: "no-cache" })
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function (j) { fromFile = arr(j); if (merge()) clearTimeout(timer); })
+    .catch(function () { /* file not present */ })
+    .then(settle);
+
+  var hasClaude = window.claude && typeof window.claude.use === "function";
+  if (!hasClaude) { settle(); }
+  else {
+    window.claude.use("db").then(function (db) {
+      if (!db) { settle(); return; }
+      var first = true;
+      db.collection("editions").orderBy("date", "desc").limit(120).onSnapshot(function (snap) {
+        fromDb = snap.docs.map(function (d) { var v = d.data() || {}; return Object.assign({ date: d.id }, v); });
+        if (merge()) clearTimeout(timer);
+        if (first) { first = false; settle(); }
+      }, function () { if (first) { first = false; settle(); } });
+    }).catch(settle);
+  }
+})();
+</script>
+</body>
+</html>

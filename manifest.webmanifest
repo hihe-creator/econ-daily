@@ -1,0 +1,12 @@
+{
+  "name": "경제시사 데일리",
+  "short_name": "경제시사",
+  "description": "매일 아침 정리하는 경제 시사 브리핑",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f5f6f8",
+  "theme_color": "#0b5d4b",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
