@@ -70,6 +70,7 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; }
 body {
+  overflow-x: hidden;
   background: var(--bg); color: var(--ink);
   font-family: var(--font-body); font-size: 16px; line-height: 1.75;
   -webkit-font-smoothing: antialiased;
@@ -173,8 +174,18 @@ a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible
 
 /* Body grid */
 .grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 24px; margin-top: 30px; align-items: start; }
-@media (max-width: 880px) { .grid { grid-template-columns: 1fr; } }
-.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+#read { scroll-margin-top: var(--top-h, 60px); }
+@media (max-width: 880px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.tabbar { position: sticky; top: var(--top-h, 60px); z-index: 5; margin: 0 -10px 14px; padding: 10px 10px;
+  background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border-radius: 0 0 20px 20px; }
+.tabbar.stuck { box-shadow: 0 8px 14px -10px rgba(20, 30, 50, .25); }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; padding: 2px; }
+@media (max-width: 640px) {
+  .filters { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .filters::-webkit-scrollbar { display: none; }
+  .chip { flex: none; }
+}
 .chip { font: inherit; font-size: 14px; padding: 6px 14px 6px 10px; border-radius: 999px; cursor: pointer; border: 0;
   background: var(--surface); color: var(--ink); box-shadow: var(--shadow); display: inline-flex; align-items: center; gap: 6px; }
 .chip .ic { color: var(--cat, var(--accent)); }
@@ -183,7 +194,7 @@ a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible
 
 .stories { display: grid; gap: 16px; }
 .story { background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 22px 24px;
-  display: grid; gap: 14px; scroll-margin-top: 80px; }
+  display: grid; gap: 14px; scroll-margin-top: calc(var(--top-h, 60px) + 74px); }
 @media (max-width: 520px) { .story { padding: 18px 16px; } .hero { padding: 22px 18px; } }
 .story-head { display: flex; gap: 12px; align-items: flex-start; }
 .story-head > div { display: grid; gap: 2px; }
@@ -260,7 +271,7 @@ a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible
 .explain.ok b { color: var(--accent-ink); } .explain.no b { color: var(--bad); }
 
 /* Side */
-aside { display: grid; gap: 16px; position: sticky; top: 76px; }
+aside { display: grid; gap: 16px; position: sticky; top: calc(var(--top-h, 60px) + 16px); }
 @media (max-width: 880px) { aside { position: static; } }
 .panel { background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 18px 20px; }
 .panel-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
@@ -419,6 +430,16 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); text-align: cen
   }
 
   document.getElementById("logo").appendChild(ic("chart", "lg"));
+  var topBar = document.querySelector(".top");
+  function setTopH() { document.documentElement.style.setProperty("--top-h", topBar.offsetHeight + "px"); markStuck(); }
+  function markStuck() {
+    var bar = document.querySelector(".tabbar");
+    if (!bar) return;
+    var stuck = bar.getBoundingClientRect().top <= topBar.offsetHeight + 1 && window.scrollY > 0;
+    bar.classList.toggle("stuck", stuck);
+  }
+  window.addEventListener("scroll", markStuck, { passive: true });
+  setTopH();
   prevBtn.appendChild(ic("left"));
   nextBtn.appendChild(ic("right"));
 
@@ -655,7 +676,7 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); text-align: cen
     return { total: qs.length, done: done, right: right };
   }
 
-  function rerenderKeepScroll() { var y = window.scrollY; render(); window.scrollTo(0, y); }
+  function rerenderKeepScroll() { var y = window.scrollY; render(); window.scrollTo(0, y); setTopH(); }
 
   function renderQuiz(s, si) {
     var qs = validQuiz(s);
@@ -851,14 +872,22 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); text-align: cen
     var filters = el("div", { class: "filters", role: "group", "aria-label": "분야 필터" });
     present.forEach(function (c) {
       var b = el("button", { class: "chip", type: "button", "data-cat": c, "aria-pressed": String(c === activeCat) }, [ic(CAT_ICON[c] || "chart", "sm"), c]);
-      b.addEventListener("click", function () { activeCat = c; render(); });
+      b.addEventListener("click", function () {
+        activeCat = c;
+        rerenderKeepScroll();
+        var r = document.getElementById("read");
+        if (r && r.getBoundingClientRect().top < topBar.offsetHeight) r.scrollIntoView({ block: "start" });
+        var on = document.querySelector('.chip[aria-pressed="true"]'), row = document.querySelector(".filters");
+        if (on && row) row.scrollLeft = on.offsetLeft - (row.clientWidth - on.offsetWidth) / 2;
+      });
       filters.appendChild(b);
     });
     var list = el("div", { class: "stories" });
     stories.forEach(function (s, si) {
       if (activeCat === "전체" || s.cat === activeCat) list.appendChild(renderStory(s, si));
     });
-    var col = el("div", null, [el("div", { class: "sec-head", style: "margin-bottom:12px" }, [secTitle("book", "자세히 읽기")]), filters, list]);
+    var col = el("div", { id: "read" }, [el("div", { class: "sec-head", style: "margin-bottom:4px" }, [secTitle("book", "자세히 읽기")]),
+      el("div", { class: "tabbar" }, [filters]), list]);
 
     var side = el("aside");
     if (arr(e.terms).length) {
@@ -900,7 +929,7 @@ footer { margin-top: 40px; font-size: 13px; color: var(--muted); text-align: cen
   var wasNarrow = narrow(), rt;
   window.addEventListener("resize", function () {
     clearTimeout(rt);
-    rt = setTimeout(function () { if (narrow() !== wasNarrow) { wasNarrow = narrow(); if (current) rerenderKeepScroll(); } }, 150);
+    rt = setTimeout(function () { setTopH(); if (narrow() !== wasNarrow) { wasNarrow = narrow(); if (current) rerenderKeepScroll(); } }, 150);
   });
   window.addEventListener("hashchange", function () {
     var h = location.hash.slice(1);
