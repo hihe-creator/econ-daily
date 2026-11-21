@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>경제시사 데일리</title>
-<meta name="description" content="매일 아침 정리하는 경제 시사 브리핑: 금리, 환율, 증시, 부동산, 무역, 글로벌 경제">
+<meta name="description" content="매일 아침 정리하는 경제 시사 브리핑: 한눈에 보는 핵심 뉴스, 도표, 이해도 퀴즈">
 <meta name="theme-color" content="#0b5d4b">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -13,8 +13,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;800&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-/* Layout: newspaper masthead → lead → market strip → stories with explanatory figures (left) + glossary/calendar/search (right).
-   Korean market colors: red = up, blue = down. */
+/* Layout: masthead → lead + market strip → "한눈에 보기" card grid with quiz score → detailed stories (figures, quiz) + side panels.
+   Korean market colors: red = up, blue = down. Each news category has its own hue for quick scanning. */
 :root {
   --paper: #f5f6f8;
   --surface: #ffffff;
@@ -26,6 +26,17 @@
   --up: #c8342a;
   --down: #1f57c0;
   --bar-muted: #aab2bd;
+  --ok: #1d7a46;
+  --ok-soft: #e2f3e8;
+  --bad: #b3261e;
+  --bad-soft: #fbe7e5;
+  --c-policy: #0b5d4b;
+  --c-market: #8a3ffc;
+  --c-fx: #b8620b;
+  --c-trade: #00728f;
+  --c-estate: #a2416f;
+  --c-global: #3a56b8;
+  --c-reg: #5b6b2a;
   --font-display: "Noto Serif KR", "Nanum Myeongjo", "Apple SD Gothic Neo", serif;
   --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
   color-scheme: light;
@@ -34,13 +45,21 @@
   :root:not([data-theme="light"]) {
     --paper: #0f1216; --surface: #171b21; --ink: #e7eaee; --muted: #9aa3ae;
     --rule: #2a3038; --accent: #56bfa2; --accent-soft: #15302a;
-    --up: #ff6e62; --down: #6f9dff; --bar-muted: #4a525d; color-scheme: dark;
+    --up: #ff6e62; --down: #6f9dff; --bar-muted: #4a525d;
+    --ok: #5fd08f; --ok-soft: #143222; --bad: #ff8a80; --bad-soft: #3a1a18;
+    --c-policy: #56bfa2; --c-market: #b48cff; --c-fx: #f0a04b; --c-trade: #45c3e0;
+    --c-estate: #e488b5; --c-global: #8ea6ff; --c-reg: #b5c96a;
+    color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --paper: #0f1216; --surface: #171b21; --ink: #e7eaee; --muted: #9aa3ae;
   --rule: #2a3038; --accent: #56bfa2; --accent-soft: #15302a;
-  --up: #ff6e62; --down: #6f9dff; --bar-muted: #4a525d; color-scheme: dark;
+  --up: #ff6e62; --down: #6f9dff; --bar-muted: #4a525d;
+  --ok: #5fd08f; --ok-soft: #143222; --bad: #ff8a80; --bad-soft: #3a1a18;
+  --c-policy: #56bfa2; --c-market: #b48cff; --c-fx: #f0a04b; --c-trade: #45c3e0;
+  --c-estate: #e488b5; --c-global: #8ea6ff; --c-reg: #b5c96a;
+  color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; }
@@ -63,7 +82,7 @@ a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible
   letter-spacing: -0.02em; line-height: 1.15; margin: 0; }
 .mast h1 span { color: var(--accent); }
 .nav { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.nav button, .nav select {
+.nav button, .nav select, .btn {
   font: inherit; font-size: 14px; color: var(--ink); background: var(--surface);
   border: 1px solid var(--rule); border-radius: 6px; padding: 6px 12px; cursor: pointer;
 }
@@ -71,7 +90,7 @@ a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible
 .nav label { font-size: 13px; color: var(--muted); }
 
 /* Lead */
-.lead { padding: 26px 0 22px; border-bottom: 1px solid var(--rule); display: grid; gap: 10px; }
+.lead { padding: 26px 0 22px; display: grid; gap: 10px; }
 .edition-date { font-size: 13px; font-weight: 600; color: var(--accent); letter-spacing: .02em; }
 .lead h2 { font-family: var(--font-display); font-weight: 800; font-size: clamp(24px, 4vw, 34px);
   line-height: 1.3; margin: 0; text-wrap: balance; max-width: 30em; }
@@ -79,29 +98,58 @@ a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible
 
 /* Market strip */
 .markets { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1px;
-  background: var(--rule); border: 1px solid var(--rule); margin: 22px 0 6px; border-radius: 8px; overflow: hidden; }
+  background: var(--rule); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
 .mk { background: var(--surface); padding: 12px 14px; display: grid; gap: 2px; }
 .mk-label { font-size: 12px; color: var(--muted); }
 .mk-value { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 .mk-chg { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
-.mk-chg.up { color: var(--up); } .mk-chg.down { color: var(--down); } .mk-chg.flat { color: var(--muted); }
+.up-t { color: var(--up); } .down-t { color: var(--down); } .flat-t { color: var(--muted); }
 .mk-note { font-size: 11px; color: var(--muted); }
-.basis { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+.basis { font-size: 12px; color: var(--muted); margin: 6px 0 0; }
+
+/* Category colors */
+[data-cat="통화정책"] { --cat: var(--c-policy); }
+[data-cat="금융시장"] { --cat: var(--c-market); }
+[data-cat="외환"] { --cat: var(--c-fx); }
+[data-cat="무역·산업"] { --cat: var(--c-trade); }
+[data-cat="부동산"] { --cat: var(--c-estate); }
+[data-cat="글로벌"] { --cat: var(--c-global); }
+[data-cat="정책·규제"] { --cat: var(--c-reg); }
+.cat { font-size: 12px; font-weight: 600; color: var(--cat, var(--accent)); display: inline-flex; align-items: center; gap: 6px; }
+.cat::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: var(--cat, var(--accent)); }
+
+/* At a glance */
+.glance { margin-top: 30px; display: grid; gap: 14px; }
+.sec-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px;
+  border-bottom: 2px solid var(--ink); padding-bottom: 6px; }
+.sec-head h3 { font-family: var(--font-display); font-size: 20px; font-weight: 800; margin: 0; }
+.score { display: flex; align-items: center; gap: 10px; font-size: 14px; }
+.score-bar { width: 140px; height: 8px; border-radius: 4px; background: var(--rule); overflow: hidden; }
+.score-bar i { display: block; height: 100%; background: var(--ok); }
+.score .btn { font-size: 13px; padding: 3px 10px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.card { all: unset; box-sizing: border-box; cursor: pointer; background: var(--surface); border: 1px solid var(--rule);
+  border-top: 4px solid var(--cat, var(--accent)); border-radius: 8px; padding: 12px 14px 12px;
+  display: grid; gap: 6px; align-content: start; }
+.card:hover { border-color: var(--cat, var(--accent)); }
+.card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.card-title { font-family: var(--font-display); font-weight: 600; font-size: 16px; line-height: 1.45; text-wrap: balance; }
+.card-sum { font-size: 14px; color: var(--muted); line-height: 1.55; }
+.card-foot { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; margin-top: 2px; }
+.qbadge { font-weight: 600; }
+.qbadge.done { color: var(--ok); }
 
 /* Body grid */
-.grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 36px; margin-top: 18px; }
+.grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 36px; margin-top: 30px; }
 @media (max-width: 860px) { .grid { grid-template-columns: 1fr; gap: 28px; } }
-
 .filters { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
 .chip { font: inherit; font-size: 13px; padding: 4px 12px; border-radius: 999px; cursor: pointer;
   border: 1px solid var(--rule); background: var(--surface); color: var(--ink); }
 .chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 
-.story { padding: 24px 0; border-bottom: 1px solid var(--rule); display: grid; gap: 10px; }
+.story { padding: 26px 0; border-bottom: 1px solid var(--rule); display: grid; gap: 12px; scroll-margin-top: 12px; }
 .story:last-child { border-bottom: 0; }
-.cat { font-size: 12px; font-weight: 600; color: var(--accent); }
-.story h3 { font-family: var(--font-display); font-weight: 600; font-size: 21px; line-height: 1.4;
-  margin: 0; text-wrap: balance; }
+.story h3 { font-family: var(--font-display); font-weight: 600; font-size: 22px; line-height: 1.4; margin: 0; text-wrap: balance; }
 .story p { margin: 0; max-width: 42em; }
 .box { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 8px 12px;
   border-radius: 0 6px 6px 0; font-size: 15px; max-width: 42em; }
@@ -110,24 +158,59 @@ a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible
 .src { font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 12px; }
 
 /* Figures */
-.fig { margin: 4px 0 2px; padding: 14px 16px 12px; background: var(--surface); border: 1px solid var(--rule);
-  border-radius: 8px; max-width: 42em; }
-.fig figcaption { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.figs { display: grid; gap: 10px; max-width: 42em; }
+.fig { margin: 0; padding: 14px 16px 12px; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; }
+.fig figcaption { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
 .fig svg { display: block; width: 100%; height: auto; }
 .fig svg text { font-family: var(--font-body); fill: var(--ink); }
 .fig svg .t-muted { fill: var(--muted); }
 .fig svg .t-num { font-variant-numeric: tabular-nums; font-weight: 600; }
+.fig svg .t-big { font-variant-numeric: tabular-nums; font-weight: 600; }
 .fig svg .grid-line { stroke: var(--rule); stroke-width: 1; }
 .fig svg .axis { stroke: var(--muted); stroke-width: 1; }
 .fill-up { fill: var(--up); } .fill-down { fill: var(--down); }
 .fill-accent { fill: var(--accent); } .fill-muted { fill: var(--bar-muted); }
 .stroke-accent { stroke: var(--accent); }
 .fig-note { font-size: 13px; color: var(--muted); margin: 8px 0 0; max-width: none; }
-.flow { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; align-items: stretch; gap: 6px; }
+.flow { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .flow li { display: flex; align-items: center; gap: 6px; font-size: 14px; }
 .flow .step { background: var(--accent-soft); border: 1px solid var(--rule); border-radius: 6px; padding: 6px 10px; }
 .flow li:last-child .step { background: var(--ink); color: var(--paper); border-color: var(--ink); font-weight: 600; }
 .flow .arr { color: var(--muted); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+.stat { border: 1px solid var(--rule); border-radius: 6px; padding: 10px 12px; display: grid; gap: 2px; }
+.stat-l { font-size: 12px; color: var(--muted); }
+.stat-v { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; line-height: 1.3; }
+.stat-s { font-size: 12px; color: var(--muted); }
+.cmp { display: grid; gap: 8px; }
+.cmp-row { display: grid; grid-template-columns: minmax(90px, 1.2fr) auto auto auto; align-items: baseline; gap: 4px 12px; font-size: 15px; }
+.cmp-l { color: var(--muted); font-size: 14px; }
+.cmp-from { color: var(--muted); font-variant-numeric: tabular-nums; }
+.cmp-arr { color: var(--muted); }
+.cmp-to { font-weight: 600; font-size: 18px; font-variant-numeric: tabular-nums; }
+.cmp-note { grid-column: 1 / -1; font-size: 12px; color: var(--muted); margin-top: -4px; }
+@media (max-width: 480px) { .cmp-row { grid-template-columns: 1fr auto auto auto; } }
+
+/* Quiz */
+.quiz { border: 1px solid var(--rule); border-radius: 8px; background: var(--surface); padding: 14px 16px; max-width: 42em; display: grid; gap: 14px; }
+.quiz-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.quiz-head b { font-size: 15px; }
+.quiz-head span { font-size: 13px; color: var(--muted); }
+.qitem { display: grid; gap: 8px; }
+.qtext { font-weight: 600; font-size: 15px; }
+.opts { display: grid; gap: 6px; }
+.opt { font: inherit; font-size: 14px; text-align: left; cursor: pointer; color: var(--ink); background: var(--paper);
+  border: 1px solid var(--rule); border-radius: 6px; padding: 8px 12px; display: flex; gap: 8px; align-items: baseline; }
+.opt:hover:not(:disabled) { border-color: var(--accent); }
+.opt:disabled { cursor: default; }
+.opt .n { color: var(--muted); font-variant-numeric: tabular-nums; }
+.opt.right { background: var(--ok-soft); border-color: var(--ok); }
+.opt.wrong { background: var(--bad-soft); border-color: var(--bad); }
+.opt .mark { margin-left: auto; font-weight: 600; font-size: 13px; }
+.opt.right .mark { color: var(--ok); } .opt.wrong .mark { color: var(--bad); }
+.explain { font-size: 14px; border-left: 3px solid var(--rule); padding: 2px 10px; color: var(--ink); }
+.explain b { margin-right: 6px; }
+.explain.ok b { color: var(--ok); } .explain.no b { color: var(--bad); }
 
 aside { display: grid; gap: 28px; align-content: start; }
 .panel h4 { font-family: var(--font-display); font-size: 17px; font-weight: 600; margin: 0 0 8px;
@@ -172,7 +255,7 @@ footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--rule);
   </main>
 
   <footer>
-    매일 아침 새 호가 발행됩니다. 경제 시사만 다루며, 각 기사 아래에 원문 출처를 달았습니다. 그림은 기사 수치로 직접 그린 설명용 도표입니다. 수치는 발행 시점 보도 기준이니 중요한 판단 전에는 원문을 확인하세요.
+    매일 아침 새 호가 발행됩니다. 경제 시사만 다루며, 각 기사 아래에 원문 출처를 달았습니다. 그림은 기사 수치로 직접 그린 설명용 도표이고, 퀴즈 기록은 이 기기의 브라우저에만 저장됩니다. 수치는 발행 시점 보도 기준이니 중요한 판단 전에는 원문을 확인하세요.
   </footer>
 </div>
 
@@ -184,6 +267,7 @@ footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--rule);
   var current = null;
   var activeCat = "전체";
   var query = "";
+  var answers = {};          // { "storyIdx-qIdx": choiceIdx } for the current edition
   var mainEl = document.getElementById("main");
   var pick = document.getElementById("pick");
   var prevBtn = document.getElementById("prev");
@@ -198,7 +282,7 @@ footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--rule);
       else if (k === "text") n.textContent = attrs[k];
       else n.setAttribute(k, attrs[k]);
     });
-    (children || []).forEach(function (c) { if (c) n.appendChild(c); });
+    (children || []).forEach(function (c) { if (c) n.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
     return n;
   }
   function sv(tag, attrs, text) {
@@ -216,7 +300,7 @@ footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--rule);
     var s = a >= 100 ? a.toLocaleString("ko-KR", { maximumFractionDigits: 1 }) : String(Math.round(a * 100) / 100);
     return (v < 0 ? "−" : "") + s;
   }
-  // Charts use a narrower drawing on phones so their text stays readable when scaled to the screen.
+  function dirClass(d) { return d === "up" ? "up-t" : d === "down" ? "down-t" : "flat-t"; }
   function narrow() { return window.innerWidth < 560; }
   var TONES = { up: "fill-up", down: "fill-down", accent: "fill-accent", muted: "fill-muted" };
 
@@ -226,6 +310,14 @@ footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--rule);
     if (!m) return str(d);
     var dt = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
     return m[1] + "년 " + (+m[2]) + "월 " + (+m[3]) + "일 (" + WD[dt.getUTCDay()] + ")";
+  }
+
+  /* ---------- storage (quiz answers; optional, per device) ---------- */
+  function loadAnswers(date) {
+    try { return JSON.parse(localStorage.getItem("econ-quiz-" + date) || "{}") || {}; } catch (e) { return {}; }
+  }
+  function saveAnswers() {
+    try { localStorage.setItem("econ-quiz-" + current, JSON.stringify(answers)); } catch (e) { /* storage unavailable */ }
   }
 
   /* ---------- figures ---------- */
@@ -239,10 +331,8 @@ footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--rule);
     var maxPos = Math.max(0, Math.max.apply(null, vals));
     var maxNeg = Math.max(0, -Math.min.apply(null, vals));
     var signed = maxNeg > 0;
-    var x0 = labelW, x1 = W - valW;
-    var span = (maxPos + maxNeg) || 1;
-    var zeroX = x0 + (x1 - x0) * (maxNeg / span);
-    var scale = (x1 - x0) / span;
+    var x0 = labelW, x1 = W - valW, span = (maxPos + maxNeg) || 1;
+    var zeroX = x0 + (x1 - x0) * (maxNeg / span), scale = (x1 - x0) / span;
     var svg = sv("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": str(f.title) });
     items.forEach(function (it, i) {
       var v = num(it.value), y = top + i * rowH;
@@ -261,7 +351,6 @@ footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--rule);
   function figLine(f) {
     var pts = arr(f.points).filter(function (p) { return num(p.value) !== null; });
     if (pts.length < 2) return null;
-    // Every point carries its own value label, so the grid is unlabeled and only gives a sense of level.
     var nw = narrow();
     var W = nw ? 380 : 640, H = nw ? 200 : 220, L = nw ? 34 : 48, R = nw ? 34 : 48, T = 30, B = 36;
     var vals = pts.map(function (p) { return num(p.value); });
@@ -275,7 +364,7 @@ footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--rule);
       var gy = T + (H - T - B) * g / 3;
       svg.appendChild(sv("line", { x1: L - 16, x2: W - R + 16, y1: gy, y2: gy, "class": "grid-line" }));
     }
-    function seg(i) {
+    for (var i = 0; i < pts.length - 1; i++) {
       var a = pts[i], b = pts[i + 1];
       var d = f.step
         ? "M" + X(i) + "," + Y(num(a.value)) + " H" + X(i + 1) + " V" + Y(num(b.value))
@@ -284,7 +373,6 @@ footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--rule);
       if (b.projected) p.setAttribute("stroke-dasharray", "6 5");
       svg.appendChild(p);
     }
-    for (var i = 0; i < pts.length - 1; i++) seg(i);
     pts.forEach(function (p, i) {
       var cx = X(i), cy = Y(num(p.value)), last = i === pts.length - 1;
       svg.appendChild(sv("circle", { cx: cx, cy: cy, r: last ? 6 : 4, "class": p.projected ? "fill-muted" : "fill-accent" }));
@@ -299,7 +387,6 @@ footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--rule);
     var mn = f.min || {}, mx = f.max || {};
     var a = num(mn.value), b = num(mx.value);
     if (a === null || b === null || b <= a) return null;
-    // Track from min to max; highlighted marks labelled above the track, others below; min/max labels on the bottom line.
     var nw = narrow();
     var W = nw ? 380 : 640, H = 136, L = 16, R = 16, Y0 = 58;
     var X = function (v) { return L + (W - L - R) * ((v - a) / (b - a)); };
@@ -307,12 +394,11 @@ footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--rule);
     svg.appendChild(sv("rect", { x: L, y: Y0 - 5, width: W - L - R, height: 10, rx: 5, "class": "fill-muted" }));
     [[mn, a, "start"], [mx, b, "end"]].forEach(function (e) {
       svg.appendChild(sv("text", { x: X(e[1]), y: H - 8, "text-anchor": e[2], "font-size": 13, "class": "t-muted" },
-        str(e[0].label) + " " + fmtNum(e[1]) + (f.unit ? str(f.unit) : "")));
+        str(e[0].label) + " " + (e[0].display ? str(e[0].display) : fmtNum(e[1]) + (f.unit ? str(f.unit) : ""))));
     });
     arr(f.marks).forEach(function (m) {
       var v = num(m.value); if (v === null) return;
-      var x = X(Math.min(b, Math.max(a, v)));
-      var hi = !!m.highlight;
+      var x = X(Math.min(b, Math.max(a, v))), hi = !!m.highlight;
       var anchor = x < W * 0.25 ? "start" : (x > W * 0.75 ? "end" : "middle");
       var tx = anchor === "start" ? x - 6 : anchor === "end" ? x + 6 : x;
       svg.appendChild(sv("line", { x1: x, x2: x, y1: hi ? Y0 - 20 : Y0, y2: hi ? Y0 : Y0 + 20, "class": "axis" }));
@@ -321,6 +407,87 @@ footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--rule);
         str(m.label) + " " + (m.display ? str(m.display) : fmtNum(v) + (f.unit ? str(f.unit) : ""))));
     });
     return svg;
+  }
+
+  function figDonut(f) {
+    var items = arr(f.items).filter(function (i) { return num(i.value) > 0; });
+    if (!items.length) return null;
+    var nw = narrow();
+    var W = nw ? 380 : 640, H = 190, cx = 95, cy = 95, r = 72, sw = 28;
+    var total = items.reduce(function (s, i) { return s + num(i.value); }, 0);
+    var svg = sv("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": str(f.title) });
+    var C = 2 * Math.PI * r, off = 0;
+    var tones = ["fill-accent", "fill-muted", "fill-down", "fill-up"];
+    items.forEach(function (it, i) {
+      var frac = num(it.value) / total, len = C * frac;
+      var tone = TONES[it.tone] || tones[i % tones.length];
+      var c = sv("circle", { cx: cx, cy: cy, r: r, fill: "none", "stroke-width": sw,
+        "stroke-dasharray": len + " " + (C - len), "stroke-dashoffset": -off, transform: "rotate(-90 " + cx + " " + cy + ")" });
+      c.setAttribute("style", "stroke: var(" + ({ "fill-accent": "--accent", "fill-muted": "--bar-muted", "fill-down": "--down", "fill-up": "--up" }[tone]) + ")");
+      svg.appendChild(c);
+      off += len;
+      var ly = 40 + i * 34, lx = 210;
+      svg.appendChild(sv("rect", { x: lx, y: ly - 11, width: 14, height: 14, rx: 3, "class": tone }));
+      svg.appendChild(sv("text", { x: lx + 22, y: ly + 1, "font-size": 14 }, str(it.label)));
+      svg.appendChild(sv("text", { x: W - 6, y: ly + 1, "text-anchor": "end", "font-size": 14, "class": "t-num" },
+        it.display ? str(it.display) : fmtNum(num(it.value)) + (f.unit ? str(f.unit) : "")));
+    });
+    if (f.center) {
+      svg.appendChild(sv("text", { x: cx, y: cy + 4, "text-anchor": "middle", "font-size": 22, "class": "t-big" }, str(f.center.value)));
+      if (f.center.label) svg.appendChild(sv("text", { x: cx, y: cy + 24, "text-anchor": "middle", "font-size": 12, "class": "t-muted" }, str(f.center.label)));
+    }
+    return svg;
+  }
+
+  function figSplit(f) {
+    var items = arr(f.items).filter(function (i) { return num(i.value) > 0; });
+    if (!items.length) return null;
+    var nw = narrow();
+    var W = nw ? 380 : 640, H = 92, L = 4, R = 4, Y0 = 12, bh = 34;
+    var total = items.reduce(function (s, i) { return s + num(i.value); }, 0);
+    var svg = sv("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": str(f.title) });
+    var x = L, tones = ["fill-accent", "fill-up", "fill-down", "fill-muted"];
+    items.forEach(function (it, i) {
+      var w = (W - L - R) * num(it.value) / total;
+      var tone = TONES[it.tone] || tones[i % tones.length];
+      svg.appendChild(sv("rect", { x: x, y: Y0, width: Math.max(1, w - 2), height: bh, rx: 3, "class": tone }));
+      var right = i === items.length - 1 && items.length > 1;
+      svg.appendChild(sv("text", { x: right ? W - R : x, y: Y0 + bh + 22, "text-anchor": right ? "end" : "start", "font-size": 13 },
+        str(it.label) + " " + (it.display ? str(it.display) : fmtNum(num(it.value)) + (f.unit ? str(f.unit) : ""))));
+      x += w;
+    });
+    return svg;
+  }
+
+  function figStats(f) {
+    var items = arr(f.items);
+    if (!items.length) return null;
+    var box = el("div", { class: "stats" });
+    items.forEach(function (it) {
+      box.appendChild(el("div", { class: "stat" }, [
+        el("span", { class: "stat-l", text: str(it.label) }),
+        el("span", { class: "stat-v " + dirClass(it.dir), text: str(it.value) }),
+        it.sub ? el("span", { class: "stat-s", text: str(it.sub) }) : null
+      ]));
+    });
+    return box;
+  }
+
+  function figCompare(f) {
+    var rows = arr(f.rows);
+    if (!rows.length) return null;
+    var box = el("div", { class: "cmp" });
+    rows.forEach(function (r) {
+      var row = el("div", { class: "cmp-row" }, [
+        el("span", { class: "cmp-l", text: str(r.label) }),
+        el("span", { class: "cmp-from", text: str(r.from) }),
+        el("span", { class: "cmp-arr", "aria-hidden": "true", text: "→" }),
+        el("span", { class: "cmp-to " + dirClass(r.dir), text: str(r.to) })
+      ]);
+      if (r.note) row.appendChild(el("span", { class: "cmp-note", text: str(r.note) }));
+      box.appendChild(row);
+    });
+    return box;
   }
 
   function figFlow(f) {
@@ -336,13 +503,11 @@ footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--rule);
     return ol;
   }
 
+  var FIGS = { bars: figBars, line: figLine, range: figRange, flow: figFlow, donut: figDonut, split: figSplit, stats: figStats, compare: figCompare };
   function renderFigure(f) {
-    if (!f || typeof f !== "object") return null;
+    if (!f || typeof f !== "object" || !FIGS[f.type]) return null;
     var body = null;
-    try {
-      body = f.type === "bars" ? figBars(f) : f.type === "line" ? figLine(f)
-           : f.type === "range" ? figRange(f) : f.type === "flow" ? figFlow(f) : null;
-    } catch (e) { body = null; }
+    try { body = FIGS[f.type](f); } catch (e) { body = null; }
     if (!body) return null;
     var note = [str(f.caption), f.source ? "자료: " + str(f.source) : ""].filter(Boolean).join("  ");
     return el("figure", { class: "fig" }, [
@@ -351,11 +516,69 @@ footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--rule);
       note ? el("p", { class: "fig-note", text: note }) : null
     ]);
   }
+  function storyFigures(s) {
+    var list = arr(s.figures).slice();
+    if (s.figure) list.unshift(s.figure);
+    return list;
+  }
+
+  /* ---------- quiz ---------- */
+  function quizStats(e) {
+    var total = 0, answered = 0, right = 0;
+    arr(e.stories).forEach(function (s, si) {
+      arr(s.quiz).forEach(function (q, qi) {
+        total++;
+        var a = answers[si + "-" + qi];
+        if (a != null) { answered++; if (a === q.answer) right++; }
+      });
+    });
+    return { total: total, answered: answered, right: right };
+  }
+  function storyQuizState(s, si) {
+    var t = arr(s.quiz).length, done = 0, right = 0;
+    arr(s.quiz).forEach(function (q, qi) { var a = answers[si + "-" + qi]; if (a != null) { done++; if (a === q.answer) right++; } });
+    return { total: t, done: done, right: right };
+  }
+
+  function renderQuiz(s, si, onChange) {
+    var qs = arr(s.quiz).filter(function (q) { return arr(q.options).length >= 2 && num(q.answer) !== null; });
+    if (!qs.length) return null;
+    var st = storyQuizState(s, si);
+    var box = el("section", { class: "quiz", "aria-label": "이해도 체크" }, [
+      el("div", { class: "quiz-head" }, [el("b", { text: "이해도 체크" }),
+        el("span", { text: st.done === st.total ? st.right + "/" + st.total + " 정답" : st.total + "문제" })])
+    ]);
+    qs.forEach(function (q, qi) {
+      var key = si + "-" + qi, picked = answers[key];
+      var item = el("div", { class: "qitem" }, [el("div", { class: "qtext", text: "Q" + (qi + 1) + ". " + str(q.q) })]);
+      var opts = el("div", { class: "opts", role: "group", "aria-label": "Q" + (qi + 1) + " 보기" });
+      arr(q.options).forEach(function (o, oi) {
+        var b = el("button", { class: "opt", type: "button" }, [el("span", { class: "n", text: (oi + 1) + "." }), el("span", { text: str(o) })]);
+        if (picked != null) {
+          b.disabled = true;
+          if (oi === q.answer) { b.classList.add("right"); b.appendChild(el("span", { class: "mark", text: "정답" })); }
+          else if (oi === picked) { b.classList.add("wrong"); b.appendChild(el("span", { class: "mark", text: "선택" })); }
+        }
+        b.addEventListener("click", function () {
+          if (answers[key] != null) return;
+          answers[key] = oi; saveAnswers(); onChange(si);
+        });
+        opts.appendChild(b);
+      });
+      item.appendChild(opts);
+      if (picked != null) {
+        var ok = picked === q.answer;
+        item.appendChild(el("div", { class: "explain " + (ok ? "ok" : "no") }, [el("b", { text: ok ? "맞았어요." : "아쉬워요." }), str(q.explain)]));
+      }
+      box.appendChild(item);
+    });
+    return box;
+  }
 
   /* ---------- page ---------- */
   function showState(title, text) {
     mainEl.innerHTML = "";
-    mainEl.appendChild(el("div", { class: "state" }, [el("strong", { text: title }), document.createTextNode(text)]));
+    mainEl.appendChild(el("div", { class: "state" }, [el("strong", { text: title }), text]));
   }
 
   function renderNav() {
@@ -379,27 +602,71 @@ footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--rule);
       box.appendChild(el("div", { class: "mk", role: "listitem" }, [
         el("span", { class: "mk-label", text: str(m.label) }),
         el("span", { class: "mk-value", text: str(m.value) }),
-        m.change ? el("span", { class: "mk-chg " + dir, text: arrow + str(m.change) }) : null,
+        m.change ? el("span", { class: "mk-chg " + dirClass(dir), text: arrow + str(m.change) }) : null,
         m.note ? el("span", { class: "mk-note", text: str(m.note) }) : null
       ]));
     });
     return box;
   }
 
-  function renderStory(s) {
+  function renderGlance(e) {
+    var qs = quizStats(e);
+    var head = el("div", { class: "sec-head" }, [el("h3", { text: "한눈에 보기" })]);
+    if (qs.total) {
+      var pct = qs.total ? Math.round(qs.right / qs.total * 100) : 0;
+      var bar = el("span", { class: "score-bar", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": String(qs.total), "aria-valuenow": String(qs.right), "aria-label": "퀴즈 정답 수" }, [el("i")]);
+      bar.firstChild.style.width = pct + "%";
+      var reset = el("button", { class: "btn", type: "button", text: "퀴즈 다시 풀기" });
+      reset.addEventListener("click", function () { answers = {}; saveAnswers(); render(); });
+      head.appendChild(el("div", { class: "score" }, [
+        el("span", { text: "오늘의 이해도 " }), bar,
+        el("b", { text: qs.right + " / " + qs.total }),
+        el("span", { class: "flat-t", text: "(" + qs.answered + "문제 풂)" }),
+        qs.answered ? reset : null
+      ]));
+    }
+    var grid = el("div", { class: "cards" });
+    arr(e.stories).forEach(function (s, si) {
+      var st = storyQuizState(s, si);
+      var badge = st.total ? (st.done === st.total
+        ? el("span", { class: "qbadge done", text: "퀴즈 " + st.right + "/" + st.total + " 정답" })
+        : el("span", { class: "qbadge", text: "퀴즈 " + st.total + "문제" })) : null;
+      var c = el("button", { class: "card", type: "button", "data-cat": str(s.cat) }, [
+        el("span", { class: "cat", text: str(s.cat) }),
+        el("span", { class: "card-title", text: str(s.title) }),
+        s.summary ? el("span", { class: "card-sum", text: str(s.summary) }) : null,
+        el("span", { class: "card-foot" }, [el("span", { text: "자세히 보기 ↓" }), badge])
+      ]);
+      c.addEventListener("click", function () {
+        if (activeCat !== "전체" && activeCat !== s.cat) { activeCat = "전체"; render(); }
+        var t = document.getElementById("story-" + si);
+        if (t) t.scrollIntoView({ block: "start" });
+      });
+      grid.appendChild(c);
+    });
+    return el("section", { class: "glance" }, [head, grid]);
+  }
+
+  function renderStory(s, si) {
     var src = el("div", { class: "src" }, [el("span", { text: "출처" })]);
     arr(s.sources).forEach(function (x) {
       var u = safeUrl(x && x.url);
       src.appendChild(u ? el("a", { href: u, target: "_blank", rel: "noopener", text: str(x.name) || "원문" })
                         : el("span", { text: str(x && x.name) }));
     });
-    return el("article", { class: "story" }, [
+    var figs = storyFigures(s).map(renderFigure).filter(Boolean);
+    return el("article", { class: "story", id: "story-" + si, "data-cat": str(s.cat) }, [
       el("span", { class: "cat", text: str(s.cat) }),
       el("h3", { text: str(s.title) }),
-      renderFigure(s.figure),
+      figs.length ? el("div", { class: "figs" }, figs) : null,
       el("p", { text: str(s.body) }),
-      s.why ? el("div", { class: "box" }, [el("b", { text: "왜 중요한가" }), document.createTextNode(str(s.why))]) : null,
-      s.point ? el("div", { class: "box alt" }, [el("b", { text: "논술·면접 연결" }), document.createTextNode(str(s.point))]) : null,
+      s.why ? el("div", { class: "box" }, [el("b", { text: "왜 중요한가" }), str(s.why)]) : null,
+      s.point ? el("div", { class: "box alt" }, [el("b", { text: "논술·면접 연결" }), str(s.point)]) : null,
+      renderQuiz(s, si, function (idx) {
+        var y = window.scrollY;
+        render();
+        window.scrollTo(0, y);
+      }),
       arr(s.sources).length ? src : null
     ]);
   }
@@ -453,6 +720,7 @@ footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--rule);
       mainEl.appendChild(renderMarkets(e.markets));
       if (e.basis) mainEl.appendChild(el("p", { class: "basis", text: str(e.basis) }));
     }
+    mainEl.appendChild(renderGlance(e));
 
     var stories = arr(e.stories);
     var present = CATS.filter(function (c) { return c === "전체" || stories.some(function (s) { return s.cat === c; }); });
@@ -464,8 +732,9 @@ footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--rule);
       filters.appendChild(b);
     });
     var col = el("div", null, [filters]);
-    stories.filter(function (s) { return activeCat === "전체" || s.cat === activeCat; })
-      .forEach(function (s) { col.appendChild(renderStory(s)); });
+    stories.forEach(function (s, si) {
+      if (activeCat === "전체" || s.cat === activeCat) col.appendChild(renderStory(s, si));
+    });
 
     var side = el("aside");
     if (arr(e.terms).length) {
@@ -488,9 +757,13 @@ footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--rule);
     renderNav();
   }
 
+  function setCurrent(date) {
+    current = date;
+    answers = loadAnswers(date);
+  }
   function go(date) {
     if (!editions.some(function (e) { return e.date === date; })) return;
-    current = date; activeCat = "전체";
+    setCurrent(date); activeCat = "전체";
     if (location.hash.slice(1) !== date) { try { history.replaceState(null, "", "#" + date); } catch (err) { /* ignore */ } }
     render(); window.scrollTo(0, 0);
   }
@@ -506,14 +779,14 @@ footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--rule);
   var wasNarrow = narrow(), rt;
   window.addEventListener("resize", function () {
     clearTimeout(rt);
-    rt = setTimeout(function () { if (narrow() !== wasNarrow) { wasNarrow = narrow(); if (current) render(); } }, 150);
+    rt = setTimeout(function () { if (narrow() !== wasNarrow) { wasNarrow = narrow(); if (current) { var y = window.scrollY; render(); window.scrollTo(0, y); } } }, 150);
   });
   window.addEventListener("hashchange", function () {
     var h = location.hash.slice(1);
     if (h && h !== current) go(h);
   });
 
-  /* ---------- data: data/editions.json (GitHub Pages and artifact files), plus Claude db when available ---------- */
+  /* ---------- data: data/editions.json, plus Claude db when available ---------- */
   var fromFile = [], fromDb = [];
   function merge() {
     var byDate = {};
@@ -525,8 +798,10 @@ footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid var(--rule);
     editions = Object.keys(byDate).sort().reverse().map(function (k) { return byDate[k]; });
     if (!editions.length) return false;
     var h = location.hash.slice(1);
-    if (!current || !byDate[current]) current = byDate[h] ? h : editions[0].date;
+    if (!current || !byDate[current]) setCurrent(byDate[h] ? h : editions[0].date);
+    var y = window.scrollY;
     render();
+    window.scrollTo(0, y);
     return true;
   }
 

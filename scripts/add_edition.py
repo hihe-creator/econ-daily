@@ -14,7 +14,7 @@ from pathlib import Path
 
 MAX_EDITIONS = 400
 CATS = {"통화정책", "금융시장", "외환", "무역·산업", "부동산", "글로벌", "정책·규제"}
-FIG_TYPES = {"bars", "line", "range", "flow"}
+FIG_TYPES = {"bars", "line", "range", "flow", "donut", "split", "stats", "compare"}
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data" / "editions.json"
 
@@ -39,9 +39,18 @@ def validate(e):
         for src in s.get("sources", []):
             if not str(src.get("url", "")).startswith(("http://", "https://")):
                 errs.append(f"stories[{i}] source url must start with http(s)")
-        fig = s.get("figure")
-        if fig is not None and fig.get("type") not in FIG_TYPES:
-            errs.append(f"stories[{i}].figure.type must be one of {sorted(FIG_TYPES)}")
+        figs = ([s["figure"]] if s.get("figure") else []) + list(s.get("figures") or [])
+        for fig in figs:
+            if fig.get("type") not in FIG_TYPES:
+                errs.append(f"stories[{i}] figure type '{fig.get('type')}' must be one of {sorted(FIG_TYPES)}")
+        for j, q in enumerate(s.get("quiz") or []):
+            opts = q.get("options")
+            if not isinstance(opts, list) or len(opts) < 2:
+                errs.append(f"stories[{i}].quiz[{j}] needs at least 2 options")
+            elif not isinstance(q.get("answer"), int) or not 0 <= q["answer"] < len(opts):
+                errs.append(f"stories[{i}].quiz[{j}].answer must be a 0-based index into options")
+            if not q.get("q") or not q.get("explain"):
+                errs.append(f"stories[{i}].quiz[{j}] needs q and explain")
     for m in e.get("markets", []):
         if m.get("dir") not in (None, "up", "down", "flat"):
             errs.append(f"markets '{m.get('label')}' dir must be up/down/flat")
